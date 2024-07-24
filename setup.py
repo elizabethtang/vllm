@@ -116,20 +116,19 @@ class cmake_build_ext(build_ext):
                 num_jobs = os.cpu_count()
 
         nvcc_threads = None
-        if _is_cuda() and get_nvcc_cuda_version() >= Version("11.2"):
-            # `nvcc_threads` is either the value of the NVCC_THREADS
-            # environment variable (if defined) or 1.
-            # when it is set, we reduce `num_jobs` to avoid
-            # overloading the system.
-            nvcc_threads = envs.NVCC_THREADS
-            if nvcc_threads is not None:
-                nvcc_threads = int(nvcc_threads)
-                logger.info(
-                    "Using NVCC_THREADS=%d as the number of nvcc threads.",
-                    nvcc_threads)
-            else:
-                nvcc_threads = 1
-            num_jobs = max(1, num_jobs // nvcc_threads)
+        # `nvcc_threads` is either the value of the NVCC_THREADS
+        # environment variable (if defined) or 1.
+        # when it is set, we reduce `num_jobs` to avoid
+        # overloading the system.
+        nvcc_threads = envs.NVCC_THREADS
+        if nvcc_threads is not None:
+            nvcc_threads = int(nvcc_threads)
+            logger.info(
+                "Using NVCC_THREADS=%d as the number of nvcc threads.",
+                nvcc_threads)
+        else:
+            nvcc_threads = 1
+        num_jobs = max(1, num_jobs // nvcc_threads)
 
         return num_jobs, nvcc_threads
 
@@ -271,7 +270,7 @@ def _is_xpu() -> bool:
 
 
 def _build_custom_ops() -> bool:
-    return _is_cuda() or _is_hip() or _is_cpu()
+    return True
 
 
 def _install_punica() -> bool:
@@ -379,18 +378,18 @@ def get_requirements() -> List[str]:
                 resolved_requirements.append(line)
         return resolved_requirements
 
-    if _is_cuda():
-        requirements = _read_requirements("requirements-cuda.txt")
-        cuda_major, cuda_minor = torch.version.cuda.split(".")
-        modified_requirements = []
-        for req in requirements:
-            if ("vllm-flash-attn" in req
-                    and not (cuda_major == "12" and cuda_minor == "1")):
-                # vllm-flash-attn is built only for CUDA 12.1.
-                # Skip for other versions.
-                continue
-            modified_requirements.append(req)
-        requirements = modified_requirements
+    requirements = _read_requirements("requirements-cuda.txt")
+    cuda_major = 12
+    cuda_minor = 3
+    modified_requirements = []
+    for req in requirements:
+        if ("vllm-flash-attn" in req
+                and not (cuda_major == "12" and cuda_minor == "1")):
+            # vllm-flash-attn is built only for CUDA 12.1.
+            # Skip for other versions.
+            continue
+        modified_requirements.append(req)
+    requirements = modified_requirements
     elif _is_hip():
         requirements = _read_requirements("requirements-rocm.txt")
     elif _is_neuron():
@@ -412,8 +411,7 @@ def get_requirements() -> List[str]:
 
 ext_modules = []
 
-if _is_cuda() or _is_hip():
-    ext_modules.append(CMakeExtension(name="vllm._moe_C"))
+ext_modules.append(CMakeExtension(name="vllm._moe_C"))
 
 if _build_custom_ops():
     ext_modules.append(CMakeExtension(name="vllm._C"))
