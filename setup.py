@@ -390,7 +390,7 @@ def get_requirements() -> List[str]:
             continue
         modified_requirements.append(req)
     requirements = modified_requirements
-    elif _is_hip():
+    if _is_hip():
         requirements = _read_requirements("requirements-rocm.txt")
     elif _is_neuron():
         requirements = _read_requirements("requirements-neuron.txt")
@@ -402,10 +402,6 @@ def get_requirements() -> List[str]:
         requirements = _read_requirements("requirements-cpu.txt")
     elif _is_xpu():
         requirements = _read_requirements("requirements-xpu.txt")
-    else:
-        raise ValueError(
-            "Unsupported platform, please use CUDA, ROCm, Neuron, "
-            "OpenVINO, or CPU.")
     return requirements
 
 
