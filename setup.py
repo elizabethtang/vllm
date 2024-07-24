@@ -352,35 +352,7 @@ def find_version(filepath: str) -> str:
 
 def get_vllm_version() -> str:
     version = find_version(get_path("vllm", "version.py"))
-
-    if _is_cuda():
-        cuda_version = str(get_nvcc_cuda_version())
-        if cuda_version != MAIN_CUDA_VERSION:
-            cuda_version_str = cuda_version.replace(".", "")[:3]
-            version += f"+cu{cuda_version_str}"
-    elif _is_hip():
-        # Get the HIP version
-        hipcc_version = get_hipcc_rocm_version()
-        if hipcc_version != MAIN_CUDA_VERSION:
-            rocm_version_str = hipcc_version.replace(".", "")[:3]
-            version += f"+rocm{rocm_version_str}"
-    elif _is_neuron():
-        # Get the Neuron version
-        neuron_version = str(get_neuronxcc_version())
-        if neuron_version != MAIN_CUDA_VERSION:
-            neuron_version_str = neuron_version.replace(".", "")[:3]
-            version += f"+neuron{neuron_version_str}"
-    elif _is_openvino():
-        version += "+openvino"
-    elif _is_tpu():
-        version += "+tpu"
-    elif _is_cpu():
-        version += "+cpu"
-    elif _is_xpu():
-        version += "+xpu"
-    else:
-        raise RuntimeError("Unknown runtime environment")
-
+    version += f"+cu12.3"
     return version
 
 
